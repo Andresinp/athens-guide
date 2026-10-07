@@ -35,13 +35,14 @@
   map.touchZoomRotate.disableRotation();
 
   function pinEl(p) {
-    var c = state.cats[p.cat] || {}, el = document.createElement('button');
+    var c = state.cats[p.cat] || {}, wrap = document.createElement('div'), el = document.createElement('button');
+    wrap.className = 'mk'; wrap.appendChild(el);   // MapLibre owns the wrapper's position/transform; style only the inner pin
     el.className = 'pin' + (p.status ? ' pin-off' : ''); el.type = 'button';
     el.style.setProperty('--c', c.col || '#444');
     el.setAttribute('aria-label', p.n + '. ' + p.name);
     el.innerHTML = '<span class="pe">' + (c.e || '•') + '</span><span class="pb">' + esc(p.name) + (p.price_level ? ' · ' + p.price_level : '') + '</span>';
     el.addEventListener('click', function (e) { e.stopPropagation(); select(p.n, true); });
-    return el;
+    return wrap;
   }
   var meMarker = null;
   function showMe() {
@@ -84,12 +85,11 @@
       (p.website ? '<p><a href="' + esc(p.website) + '" target="_blank" rel="noopener">Website / Instagram ↗</a></p>' : '');
     return '<article class="card" data-n="' + p.n + '" aria-label="' + esc(p.name) + '">' + photosHTML(p) +
       '<div class="body"><div class="row1"><h2>' + esc(p.name) + '</h2><span class="price">' + esc(p.price_level || '') + '</span></div>' +
-      '<div class="by">Recommended by <b>' + esc(by) + '</b></div>' +
-      '<div class="dist" data-d="' + p.n + '"></div>' +
+      '<div class="by"><span class="dist" data-d="' + p.n + '"></span> · by <b>' + esc(by) + '</b></div>' +
       '<div class="chips">' + chips + '</div>' + alerts +
-      '<details><summary>Details & tips</summary>' + det + '</details>' +
       '<div class="cta"><a class="go" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=' + p.lat + ',' + p.lon + '">🚶 Walk there</a>' +
-      '<a class="gm" target="_blank" rel="noopener" href="' + esc(p.link) + '">Google Maps ↗</a></div></div></article>';
+      '<a class="gm" target="_blank" rel="noopener" href="' + esc(p.link) + '">Maps ↗</a><button type="button" class="mb" aria-expanded="false">Info ▾</button></div>' +
+      '<div class="more" hidden>' + det + '</div></div></article>';
   }
 
   var track = $('#cards');
@@ -116,7 +116,7 @@
     state.list.forEach(function (p) {
       p._d = dist(o, [p.lon, p.lat]);
       var el = track.querySelector('[data-d="' + p.n + '"]');
-      if (el) el.textContent = have ? '📍 ' + fmtDist(p._d) : '📍 ' + fmtDist(p._d) + ' from the centre';
+      if (el) el.textContent = have ? fmtDist(p._d) : fmtDist(p._d) + ' from centre';
     });
     if (!$('#list').hidden) renderList();
   }
@@ -145,10 +145,10 @@
   function setActive(i, fly) {
     if (i === state.active || !state.list[i]) return;
     var prev = state.list[state.active];
-    if (prev) state.markers[prev.n].getElement().classList.remove('on');
+    if (prev) { var pe = state.markers[prev.n].getElement(); pe.classList.remove('on'); pe.firstChild.classList.remove('on'); }
     state.active = i;
     var p = state.list[i], m = state.markers[p.n];
-    m.getElement().classList.add('on'); m.getElement().parentNode && m.getElement().style.setProperty('z-index', 5);
+    m.getElement().classList.add('on'); m.getElement().firstChild.classList.add('on');
     if (fly !== false) map.easeTo({ center: [p.lon, p.lat], offset: [0, -sheetH() / 2 + 20], duration: 600 });
   }
   var scrollT;
@@ -157,7 +157,10 @@
     scrollT = setTimeout(function () { setActive(cardIndexInView(), true); }, 90);   // fires once the snap settles
   }, { passive: true });
   track.addEventListener('click', function (e) {
-    if (e.target.closest('.x')) { openSheet(false); }
+    if (e.target.closest('.x')) { openSheet(false); return; }
+    var mb = e.target.closest('.mb');
+    if (mb) { var more = mb.closest('.body').querySelector('.more'), op = more.hidden; more.hidden = !op;
+      mb.setAttribute('aria-expanded', op); mb.textContent = op ? 'Less ▴' : 'Info ▾'; if (op) more.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
   });
 
   function select(n, fromPin) {
@@ -258,5 +261,5 @@
     } else geoErr();
   }).catch(function (e) { toast('Could not load places (' + e.message + ')', 0); });
   map.on('click', function () { if (state.open && window.innerWidth < 700) openSheet(false); });
-  window.__near = state;   // handy for debugging in the console
+  window.__near = state; state.map = map;   // handy for debugging in the console
 })();
