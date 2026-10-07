@@ -64,7 +64,8 @@
   }
   function photosHTML(p) {
     var c = state.cats[p.cat] || {}, s = slidesOf(p);
-    var tag = '<span class="tag" style="--c:' + (c.col || '#444') + '">' + (c.e || '') + ' ' + esc(c.short || '') + '</span>';
+    var tag = '<div class="tags"><span class="tag" style="--c:' + (c.col || '#444') + '">' + (c.e || '') + ' ' + esc(c.short || '') + '</span>' +
+      (p.also || []).map(function (a) { var k = state.cats[a] || {}; return '<span class="also">' + (k.e || '') + ' ' + esc((k.short || '').toLowerCase()) + '</span>'; }).join('') + '</div>';
     var close = '<button class="x" type="button" aria-label="Hide cards">✕</button>';
     if (!s.length) {
       return '<div class="ph empty" style="--c:' + (c.col || '#444') + '">' + tag + close + '<span class="big">' + (c.e || '📍') + '</span>' +
@@ -81,8 +82,7 @@
   }
   function cardHTML(p) {
     var by = p.by.join(' & ');
-    var chips = (p.vibe ? '<span class="chip v-' + p.vibe + '">● ' + esc(p.vibeLabel) + '</span>' : '') +
-      (p.also || []).map(function (c) { var k = state.cats[c] || {}; return '<span class="chip ghost">also ' + (k.e || '') + ' ' + esc((k.short || '').toLowerCase()) + '</span>'; }).join('');
+    var chips = p.vibe ? '<span class="chip v-' + p.vibe + '">● ' + esc(p.vibeLabel) + '</span>' : '';   // secondary types sit on the photo
     var alerts = (p.status ? '<div class="alert">⏸ ' + esc(p.status) + ' on Google (checked 7 Oct 2026)</div>' : '') +
       (p.warning ? '<div class="alert">⚠ ' + esc(p.warning) + '</div>' : '');
     var prices = (p.prices || []).map(function (x) { return '<span>' + esc(x[0]) + ' <b>' + esc(x[1]) + '</b></span>'; }).join('');
