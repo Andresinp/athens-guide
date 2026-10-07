@@ -54,27 +54,35 @@
   }
 
   // ------------------------------------------------------------------ cards
+  // Photos: our own (Wikimedia / venue site) first, then Google place photos up to 5 in total, owner's photos first.
+  // Google images carry data-g and only get a src when that slide is shown (see loadG), so unseen photos cost nothing.
+  var PIN = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="#EA4335" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>';
+  function slidesOf(p) {
+    var own = (p.photos || []).map(function (ph) { return { url: ph.url, credit: ph.credit }; });
+    var g = own.length >= 3 ? [] : (p.gp || []).slice(0, 5 - own.length);
+    return own.concat(g.map(function (ph) { return { g: ph.name, credit: 'Photo: ' + (ph.author || 'Google user') + ' · Google Maps' }; }));
+  }
   function photosHTML(p) {
-    var c = state.cats[p.cat] || {};
+    var c = state.cats[p.cat] || {}, s = slidesOf(p);
     var tag = '<span class="tag" style="--c:' + (c.col || '#444') + '">' + (c.e || '') + ' ' + esc(c.short || '') + '</span>';
     var close = '<button class="x" type="button" aria-label="Hide cards">✕</button>';
-    if (!p.photos || !p.photos.length) {
+    if (!s.length) {
       return '<div class="ph empty" style="--c:' + (c.col || '#444') + '">' + tag + close + '<span class="big">' + (c.e || '📍') + '</span>' +
-        '<a class="gph" href="' + esc(p.link) + '" target="_blank" rel="noopener">More on Google Maps ↗</a></div>';
+        '<a class="gph" href="' + esc(p.link) + '" target="_blank" rel="noopener">Photos on Google Maps ↗</a></div>';
     }
-    if (p.photos[0].g) return '<div class="ph">' + tag + close + '<div class="slides">' + p.photos[0].g + '</div></div>';
-    var slides = p.photos.map(function (ph, i) {
-      return '<figure class="slide"><img loading="' + (i ? 'lazy' : 'eager') + '" decoding="async" src="' + esc(ph.url) + '" alt="' + esc(p.name) + '" referrerpolicy="no-referrer-when-downgrade"' +
-        ' onerror="this.closest(\'.slide\').classList.add(\'broken\')"><figcaption>' + esc(ph.credit) + '</figcaption></figure>';
+    p.gl = p.gl || {};
+    var slides = s.map(function (ph, i) {
+      var src = ph.g ? (p.gl[i] ? ' src="' + gURL(ph.g) + '"' : '') + ' data-g="' + esc(ph.g) + '"' : ' src="' + esc(ph.url) + '"' + (i ? ' loading="lazy"' : '');
+      return '<figure class="slide"><img decoding="async"' + src + ' alt="' + esc(p.name) + '" onerror="this.closest(\'.slide\').classList.add(\'broken\')">' +
+        '<figcaption>' + esc(ph.credit) + '</figcaption></figure>';
     }).join('');
-    var dots = p.photos.length > 1 ? '<div class="dots">' + p.photos.map(function (_, i) { return '<i class="' + (i ? '' : 'on') + '"></i>'; }).join('') + '</div>' : '';
-    return '<div class="ph">' + tag + close + '<div class="slides">' + slides + '</div>' + dots + '</div>';
+    var dots = s.length > 1 ? '<div class="dots">' + s.map(function (_, i) { return '<i class="' + (i ? '' : 'on') + '"></i>'; }).join('') + '</div>' : '';
+    return '<div class="ph">' + tag + close + '<div class="slides" data-n="' + p.n + '">' + slides + '</div>' + dots + '</div>';
   }
   function cardHTML(p) {
     var by = p.by.join(' & ');
     var chips = (p.vibe ? '<span class="chip v-' + p.vibe + '">● ' + esc(p.vibeLabel) + '</span>' : '') +
-      (p.also || []).map(function (c) { var k = state.cats[c] || {}; return '<span class="chip ghost">also ' + (k.e || '') + ' ' + esc((k.short || '').toLowerCase()) + '</span>'; }).join('') +
-      (p.rating ? '<span class="chip rate">★ ' + esc(p.rating) + '</span>' : '');
+      (p.also || []).map(function (c) { var k = state.cats[c] || {}; return '<span class="chip ghost">also ' + (k.e || '') + ' ' + esc((k.short || '').toLowerCase()) + '</span>'; }).join('');
     var alerts = (p.status ? '<div class="alert">⏸ ' + esc(p.status) + ' on Google (checked 7 Oct 2026)</div>' : '') +
       (p.warning ? '<div class="alert">⚠ ' + esc(p.warning) + '</div>' : '');
     var prices = (p.prices || []).map(function (x) { return '<span>' + esc(x[0]) + ' <b>' + esc(x[1]) + '</b></span>'; }).join('');
@@ -84,12 +92,13 @@
       (p.pp || prices ? '<p class="prices">💶 ' + esc([p.price_level, p.pp ? p.pp + ' per person (Google)' : ''].filter(Boolean).join(' · ')) + (prices ? '<br>' + prices : '') + '</p>' : '') +
       '<p>' + esc(p.background) + '</p><p class="mut">📍 ' + esc(p.address) + ' · ' + esc(p.zoneName) + '</p>' +
       (p.website ? '<p><a href="' + esc(p.website) + '" target="_blank" rel="noopener">Website / Instagram ↗</a></p>' : '');
+    var meta = [p.price_level, p.rating ? '★ ' + p.rating : ''].filter(Boolean).join(' · ');
     return '<article class="card" data-n="' + p.n + '" aria-label="' + esc(p.name) + '">' + photosHTML(p) +
-      '<div class="body"><div class="row1"><h2>' + esc(p.name) + '</h2><span class="price">' + esc(p.price_level || '') + '</span></div>' +
+      '<div class="body"><div class="row1"><h2>' + esc(p.name) + '</h2><span class="price">' + esc(meta) + '</span></div>' +
       '<div class="by"><span class="dist" data-d="' + p.n + '"></span> · by <b>' + esc(by) + '</b></div>' +
-      '<div class="chips">' + chips + '</div>' + alerts +
-      '<div class="cta"><a class="go" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=' + p.lat + ',' + p.lon + '">🚶 Walk there</a>' +
-      '<a class="gm" target="_blank" rel="noopener" href="' + esc(p.link) + '">Maps ↗</a><button type="button" class="mb" aria-expanded="false">Info ▾</button></div>' +
+      '<div class="row3"><div class="chips">' + chips + '</div>' +
+      '<a class="gmb" target="_blank" rel="noopener" href="' + esc(p.link) + '">' + PIN + 'Google Maps</a>' +
+      '<button type="button" class="mb" aria-expanded="false">Info ▾</button></div>' + alerts +
       '<div class="more" hidden>' + det + '</div></div></article>';
   }
 
@@ -121,16 +130,14 @@
     });
     if (!$('#list').hidden) renderList();
   }
-  function wirePhotos() {
-    track.querySelectorAll('.slides').forEach(function (s) {
-      var dots = s.parentNode.querySelectorAll('.dots i');
-      if (!dots.length) return;
-      s.addEventListener('scroll', function () {
-        var i = Math.round(s.scrollLeft / s.clientWidth);
-        dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
-      }, { passive: true });
-    });
-  }
+  function wirePhotos() {}   // carousels are handled by the capture listener below
+  track.addEventListener('scroll', function (e) {
+    var s = e.target;
+    if (!s.classList || !s.classList.contains('slides')) return;
+    var x = s.scrollLeft / s.clientWidth, i = Math.round(x);
+    s.parentNode.querySelectorAll('.dots i').forEach(function (d, k) { d.classList.toggle('on', k === i); });
+    loadG(s, Math.floor(x)); loadG(s, Math.ceil(x));   // the slide coming into view starts loading as the swipe begins
+  }, { capture: true, passive: true });
   function cardIndexInView() {
     var mid = track.scrollLeft + track.clientWidth / 2, best = 0, bd = 1e9;
     Array.prototype.forEach.call(track.children, function (c, i) {
@@ -151,37 +158,50 @@
     var p = state.list[i], m = state.markers[p.n];
     m.getElement().classList.add('on'); m.getElement().firstChild.classList.add('on');
     if (fly !== false) map.easeTo({ center: [p.lon, p.lat], offset: [0, -sheetH() / 2 + 20], duration: 600 });
-    clearTimeout(gT); gT = setTimeout(function () { gPhoto(p); }, 700);   // only once the card has settled, so fast swipes cost nothing
+    for (var k = i - 1; k <= i + 3; k++) if (state.list[k]) gList(state.list[k]);   // photo lists are free: fetch ahead
+    clearTimeout(gT); gT = setTimeout(function () { var s = track.querySelector('.slides[data-n="' + p.n + '"]'); if (s) loadG(s, 0); }, 250);
   }
 
-  // ------------------------------------------------------------------ Google place photos (only for places with no photo of our own)
-  // The key comes from places-key.js (window.ATH_GKEY), locked to this site and to Places API (New). Looking up a place's
-  // photo list is free (Place Details "IDs only"); each image shown counts towards the 1,000 free per month.
-  // Guard rails: one photo per place, once per visit, at most G_DAY images per day on this device, plus the quota set in Google Cloud.
-  var gT, gDone = {}, G_DAY = 40;
+  // ------------------------------------------------------------------ Google place photos
+  // Key in places-key.js (window.ATH_GKEY), locked to this site and to Places API (New). A place's photo list is free
+  // (Place Details "IDs only"); each image shown counts towards the free monthly allowance. An image is requested only
+  // when its slide is on screen; G_DAY caps images per day on this device; the real ceiling is the daily quota in Google Cloud.
+  var gT, G_DAY = 150, G_W = 720;
+  function gURL(name) { return 'https://places.googleapis.com/v1/' + name + '/media?maxWidthPx=' + G_W + '&key=' + window.ATH_GKEY; }
   function gBudget(take) {
     var k = 'gph-' + new Date().toISOString().slice(0, 10), n = G_DAY;
-    try { n = +localStorage.getItem(k) || 0; if (take) localStorage.setItem(k, n + 1); } catch (e) {}   // no storage: no Google photos
+    try { n = +localStorage.getItem(k) || 0; if (take && n < G_DAY) localStorage.setItem(k, n + 1); } catch (e) {}   // no storage: no Google photos
     return n < G_DAY;
   }
-  function gPhoto(p) {
-    var key = window.ATH_GKEY;
-    if (!key || !p.gid || (p.photos && p.photos.length) || gDone[p.n] || !gBudget(false)) return;
-    gDone[p.n] = 1;
-    fetch('https://places.googleapis.com/v1/places/' + p.gid + '?fields=photos&key=' + key)
+  function norm(s) { return String(s || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z0-9α-ω]+/g, ' ').trim(); }
+  function isOwner(p, author) {   // the venue's own uploads carry the venue's name as author
+    var a = norm(author), w = norm(p.name).split(' ').filter(function (t) { return t.length >= 4; });
+    return !!a && w.some(function (t) { return a.indexOf(t) >= 0; });
+  }
+  function gList(p) {
+    if (!window.ATH_GKEY || !p.gid || p.gp || p._gq || (p.photos || []).length >= 3) return;
+    p._gq = 1;
+    fetch('https://places.googleapis.com/v1/places/' + p.gid + '?fields=photos&key=' + window.ATH_GKEY)
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
-        var ph = d && d.photos && d.photos[0];
-        if (!ph || !gBudget(true)) return;
-        var a = (ph.authorAttributions || [])[0] || {};
-        var html = '<figure class="slide"><img decoding="async" alt="' + esc(p.name) + '" src="https://places.googleapis.com/v1/' + ph.name +
-          '/media?maxWidthPx=800&key=' + key + '"><figcaption>Photo: ' + esc(a.displayName || 'Google user') + ' · Google Maps</figcaption></figure>';
-        p.photos = [{ g: html }];
+        var ph = (d && d.photos || []).map(function (x) { var a = (x.authorAttributions || [])[0] || {}; return { name: x.name, author: a.displayName || '' }; });
+        ph.forEach(function (x, i) { x.o = isOwner(p, x.author) ? 0 : 1; x.i = i; });
+        p.gp = ph.sort(function (a, b) { return a.o - b.o || a.i - b.i; });   // owner's photos first, then Google's own order
         var box = track.querySelector('.card[data-n="' + p.n + '"] .ph');
-        if (box) { box.classList.remove('empty'); box.querySelector('.big').outerHTML = '<div class="slides">' + html + '</div>'; var gl = box.querySelector('.gph'); if (gl) gl.remove(); }
-        state.gShown = (state.gShown || 0) + 1;
-      }).catch(function () {});
+        if (box && p.gp.length) {
+          box.outerHTML = photosHTML(p);
+          if (state.list[state.active] === p) { var s = track.querySelector('.slides[data-n="' + p.n + '"]'); if (s) loadG(s, 0); }
+        }
+      }).catch(function () { p._gq = 0; });
   }
+  function loadG(s, i) {
+    var img = s.querySelectorAll('img')[i];
+    if (!img || !img.dataset.g || img.getAttribute('src') || !gBudget(true)) return;
+    var p = state.all.find(function (q) { return q.n === +s.dataset.n; });
+    img.src = gURL(img.dataset.g); if (p) p.gl[i] = 1;
+    state.gShown = (state.gShown || 0) + 1;
+  }
+
   var scrollT;
   track.addEventListener('scroll', function () {
     clearTimeout(scrollT);
