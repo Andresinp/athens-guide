@@ -60,8 +60,9 @@
     var close = '<button class="x" type="button" aria-label="Hide cards">✕</button>';
     if (!p.photos || !p.photos.length) {
       return '<div class="ph empty" style="--c:' + (c.col || '#444') + '">' + tag + close + '<span class="big">' + (c.e || '📍') + '</span>' +
-        '<a class="gph" href="' + esc(p.link) + '" target="_blank" rel="noopener">See photos on Google Maps ↗</a></div>';
+        '<a class="gph" href="' + esc(p.link) + '" target="_blank" rel="noopener">More on Google Maps ↗</a></div>';
     }
+    if (p.photos[0].g) return '<div class="ph">' + tag + close + '<div class="slides">' + p.photos[0].g + '</div></div>';
     var slides = p.photos.map(function (ph, i) {
       return '<figure class="slide"><img loading="' + (i ? 'lazy' : 'eager') + '" decoding="async" src="' + esc(ph.url) + '" alt="' + esc(p.name) + '" referrerpolicy="no-referrer-when-downgrade"' +
         ' onerror="this.closest(\'.slide\').classList.add(\'broken\')"><figcaption>' + esc(ph.credit) + '</figcaption></figure>';
@@ -150,6 +151,36 @@
     var p = state.list[i], m = state.markers[p.n];
     m.getElement().classList.add('on'); m.getElement().firstChild.classList.add('on');
     if (fly !== false) map.easeTo({ center: [p.lon, p.lat], offset: [0, -sheetH() / 2 + 20], duration: 600 });
+    clearTimeout(gT); gT = setTimeout(function () { gPhoto(p); }, 700);   // only once the card has settled, so fast swipes cost nothing
+  }
+
+  // ------------------------------------------------------------------ Google place photos (only for places with no photo of our own)
+  // The key comes from places-key.js (window.ATH_GKEY), locked to this site and to Places API (New). Looking up a place's
+  // photo list is free (Place Details "IDs only"); each image shown counts towards the 1,000 free per month.
+  // Guard rails: one photo per place, once per visit, at most G_DAY images per day on this device, plus the quota set in Google Cloud.
+  var gT, gDone = {}, G_DAY = 40;
+  function gBudget(take) {
+    var k = 'gph-' + new Date().toISOString().slice(0, 10), n = G_DAY;
+    try { n = +localStorage.getItem(k) || 0; if (take) localStorage.setItem(k, n + 1); } catch (e) {}   // no storage: no Google photos
+    return n < G_DAY;
+  }
+  function gPhoto(p) {
+    var key = window.ATH_GKEY;
+    if (!key || !p.gid || (p.photos && p.photos.length) || gDone[p.n] || !gBudget(false)) return;
+    gDone[p.n] = 1;
+    fetch('https://places.googleapis.com/v1/places/' + p.gid + '?fields=photos&key=' + key)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var ph = d && d.photos && d.photos[0];
+        if (!ph || !gBudget(true)) return;
+        var a = (ph.authorAttributions || [])[0] || {};
+        var html = '<figure class="slide"><img decoding="async" alt="' + esc(p.name) + '" src="https://places.googleapis.com/v1/' + ph.name +
+          '/media?maxWidthPx=800&key=' + key + '"><figcaption>Photo: ' + esc(a.displayName || 'Google user') + ' · Google Maps</figcaption></figure>';
+        p.photos = [{ g: html }];
+        var box = track.querySelector('.card[data-n="' + p.n + '"] .ph');
+        if (box) { box.classList.remove('empty'); box.querySelector('.big').outerHTML = '<div class="slides">' + html + '</div>'; var gl = box.querySelector('.gph'); if (gl) gl.remove(); }
+        state.gShown = (state.gShown || 0) + 1;
+      }).catch(function () {});
   }
   var scrollT;
   track.addEventListener('scroll', function () {
