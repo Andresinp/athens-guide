@@ -1,117 +1,94 @@
-/* Athens guide map: emoji pins, type/friend filters, shaded areas, "near me". Needs Leaflet. */
+/* Athens guide maps for the area / type / friend pages: same look as near.html (MapLibre + OpenFreeMap positron,
+   white pins with one category-colour ring), no card sheet. Tap a pin for a small popup. Needs MapLibre GL. */
 (function () {
+  'use strict';
   var CAT = window.ATH_CATS || {};
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  // pastel fills in the spirit of the neighbourhood picture on the start page
+  var PASTEL = { 'psyri-monastiraki': '#f6c992', 'plaka-syntagma': '#f3a99a', 'gazi-kerameikos': '#d9c6ec', 'exarchia-omonia': '#c6d8a6',
+    'kolonaki-lycabettus': '#f6d29e', 'pangrati-ilisia': '#b9d7e8', 'acropolis-koukaki': '#f2e98f', 'beyond': '#d5d5d5' };
   function km(a, b, c, d) {
     var r = Math.PI / 180, x = Math.sin((c - a) * r / 2), y = Math.sin((d - b) * r / 2);
     return 12742 * Math.asin(Math.sqrt(x * x + Math.cos(a * r) * Math.cos(c * r) * y * y));
   }
-  function walk(k) { var m = Math.round(k * 1000 * 1.3 / 80); return m <= 40 ? '~' + m + ' min walk' : '~' + k.toFixed(1) + ' km'; }
-  function pinIcon(p) {
-    var c = CAT[p.cat] || {}, cls = 'pin' + (p.closed ? ' pin-off' : '');
-    return L.divIcon({ className: '', iconSize: [34, 40], iconAnchor: [17, 38], popupAnchor: [0, -34],
-      html: '<div class="' + cls + '" style="--c:' + (c.col || '#555') + '"><span class="pe">' + (c.e || '📍') + '</span><b class="pn">' + p.n + '</b></div>' });
-  }
   function popup(p) {
     var c = CAT[p.cat] || {};
-    return '<div class="pop"><b>' + p.n + '. ' + p.name + '</b><br><span>' + (c.e || '') + ' ' + (c.label || '') +
-      (p.price ? ' · ' + p.price : '') + (p.rating ? ' · ★' + p.rating : '') + '</span>' +
-      (p.closed ? '<br><span class="warn">⏸ ' + p.closed + '</span>' : '') +
-      '<br><a href="' + p.page + '">Details</a> · <a target="_blank" rel="noopener" href="' + p.link + '">Google Maps ↗</a></div>';
+    return '<div class="pop"><b>' + esc(p.name) + '</b><span>' + (c.e || '') + ' ' + esc(c.label || '') +
+      (p.price ? ' · ' + esc(p.price) : '') + (p.rating ? ' · ★ ' + esc(p.rating) : '') + '</span>' +
+      (p.closed ? '<span class="warn">⏸ ' + esc(p.closed) + '</span>' : '') +
+      '<span class="pl"><a href="' + esc(p.page) + '">Details</a><a target="_blank" rel="noopener" href="' + esc(p.link) + '">Google Maps ↗</a></span></div>';
   }
   window.AthensMap = function (id, pts, opt) {
     opt = opt || {};
-    var el = document.getElementById(id); if (!el) return;
-    var light = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-      { maxZoom: 16, attribution: 'Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors' });
-    var labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 });
-    var streets = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap contributors' });
-    var m = L.map(id, { scrollWheelZoom: false, layers: [light, labels] });
-    L.control.layers({ 'Light': L.layerGroup([light, labels]), 'Streets': streets }, null, { position: 'topright' }).addTo(m);
-    var bounds = [], markers = [];
-    if (opt.areas) {
-      opt.areas.forEach(function (a) {
-        var poly = L.polygon(a.shape, { color: a.col, weight: 2, fillColor: a.col, fillOpacity: 0.18 }).addTo(m);
-        poly.bindTooltip(a.short || a.name, { permanent: true, direction: 'center', className: 'area-lbl' });
-        if (a.z) poly.on('click', function () { location.href = a.z + '.html'; });
-        a.shape.forEach(function (ll) { bounds.push(ll); });
-      });
-    }
-    if (opt.home) {
-      L.circle([opt.home.lat, opt.home.lon], { radius: opt.home.exact ? 40 : 700, color: '#b4532a', fillOpacity: .15 }).addTo(m).bindPopup(opt.home.label);
-      if (opt.home.exact) L.marker([opt.home.lat, opt.home.lon], { icon: L.divIcon({ className: '', iconSize: [30, 30], html: '<div class="home-mk">🏠</div>' }) }).addTo(m);
-    }
-    pts.forEach(function (p) {
-      var mk = L.marker([p.lat, p.lon], { icon: pinIcon(p), title: p.n + '. ' + p.name }).bindPopup(popup(p));
-      mk._p = p; markers.push(mk); mk.addTo(m);
-    });
+    var el = document.getElementById(id); if (!el || !window.maplibregl) return;
+    var map = new maplibregl.Map({ container: id, style: 'https://tiles.openfreemap.org/styles/positron', center: [23.7275, 37.9765], zoom: 13,
+      cooperativeGestures: true, dragRotate: false, pitchWithRotate: false, touchPitch: false, attributionControl: { compact: true } });
+    map.touchZoomRotate.disableRotation();
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    map.on('load', function () { var at = el.querySelector('.maplibregl-ctrl-attrib'); if (at) at.classList.remove('maplibregl-compact-show'); });   // credits start as a small ⓘ
+
     // fit to the dense core: places within 2.4 km of the median point (outliers stay on the map, just off-screen)
+    var b = new maplibregl.LngLatBounds();
     if (pts.length) {
       var la = pts.map(function (p) { return p.lat; }).sort(), lo = pts.map(function (p) { return p.lon; }).sort();
       var cLa = la[Math.floor(la.length / 2)], cLo = lo[Math.floor(lo.length / 2)];
-      pts.forEach(function (p) { if (pts.length < 4 || km(cLa, cLo, p.lat, p.lon) < 2.4) bounds.push([p.lat, p.lon]); });
+      pts.forEach(function (p) { if (pts.length < 4 || km(cLa, cLo, p.lat, p.lon) < 2.4) b.extend([p.lon, p.lat]); });
     }
-    if (opt.home && !bounds.length) bounds.push([opt.home.lat, opt.home.lon]);
-    if (bounds.length) m.fitBounds(bounds, { padding: [24, 24], maxZoom: 16 });
+    (opt.areas || []).forEach(function (a) { a.shape.forEach(function (ll) { b.extend([ll[1], ll[0]]); }); });
+    if (!b.isEmpty()) map.fitBounds(b, { padding: 36, maxZoom: 16, duration: 0 });
 
-    // ---- filters (type + friend) and near-me
+    if (opt.areas && opt.areas.length) {
+      map.on('load', function () {
+        var fc = { type: 'FeatureCollection', features: opt.areas.map(function (a) {
+          var ring = a.shape.map(function (ll) { return [ll[1], ll[0]]; }); ring.push(ring[0]);
+          return { type: 'Feature', properties: { col: PASTEL[a.z] || a.col }, geometry: { type: 'Polygon', coordinates: [ring] } };
+        }) };
+        map.addSource('areas', { type: 'geojson', data: fc });
+        var first = (map.getStyle().layers.find(function (l) { return l.type === 'symbol'; }) || {}).id;   // under street names
+        map.addLayer({ id: 'area-fill', type: 'fill', source: 'areas', paint: { 'fill-color': ['get', 'col'], 'fill-opacity': 0.5 } }, first);
+        map.addLayer({ id: 'area-line', type: 'line', source: 'areas', paint: { 'line-color': '#ffffff', 'line-width': 2 } }, first);
+      });
+    }
+
+    var markers = [];
+    pts.forEach(function (p) {
+      var c = CAT[p.cat] || {}, wrap = document.createElement('div'), btn = document.createElement('button');
+      wrap.className = 'mk'; wrap.appendChild(btn);    // MapLibre positions the wrapper; only the inner pin is styled
+      btn.type = 'button'; btn.className = 'pin' + (p.closed ? ' pin-off' : ''); btn.style.setProperty('--c', c.col || '#555');
+      btn.setAttribute('aria-label', p.n + '. ' + p.name);
+      btn.innerHTML = '<span class="pe">' + (c.e || '📍') + '</span><b class="pn">' + p.n + '</b>';
+      var m = new maplibregl.Marker({ element: wrap, anchor: 'center' }).setLngLat([p.lon, p.lat])
+        .setPopup(new maplibregl.Popup({ offset: 18, closeButton: false, maxWidth: '240px' }).setHTML(popup(p))).addTo(map);
+      m._p = p; markers.push(m);
+    });
+
+    // ---- filters (type + friend); "Near me" opens the full-screen page
     var bar = opt.filters && document.getElementById(id + '-f');
-    var activeCats = {}, who = 'all', me = null, meMk = null;
+    var activeCats = {}, who = 'all';
     Object.keys(CAT).forEach(function (k) { activeCats[k] = true; });
     function visible(p) {
       var catOk = activeCats[p.cat] || (p.also || []).some(function (c) { return activeCats[c]; });
       return catOk && (who === 'all' || p.by.indexOf(who) >= 0);
     }
-    function refresh() {
-      markers.forEach(function (mk) { if (visible(mk._p)) mk.addTo(m); else m.removeLayer(mk); });
-      if (me) listNear();
-    }
+    function refresh() { markers.forEach(function (m) { m.getElement().style.display = visible(m._p) ? '' : 'none'; if (!visible(m._p)) m.getPopup().remove(); }); }
     if (bar) {
       var cats = {}; pts.forEach(function (p) { cats[p.cat] = 1; (p.also || []).forEach(function (c) { cats[c] = 1; }); });
       var html = '<div class="frow"><span class="flbl">Show</span><button class="on" data-all="1">All</button>';
       Object.keys(CAT).forEach(function (k) { if (cats[k]) html += '<button class="on" data-cat="' + k + '" style="--c:' + CAT[k].col + '">' + CAT[k].e + ' ' + CAT[k].short + '</button>'; });
       html += '</div><div class="frow"><span class="flbl">From</span>';
       ['all', 'Erhan', 'Irene', 'Giulia'].forEach(function (w) { html += '<button data-who="' + w + '" class="' + (w === 'all' ? 'on' : '') + '">' + (w === 'all' ? 'Everyone' : w) + '</button>'; });
-      html += '<button class="near" data-near="1">📍 Near me</button></div>';
+      html += '<a class="near" href="near.html">📍 Near me</a></div>';
       bar.innerHTML = html;
       bar.addEventListener('click', function (e) {
-        var b = e.target.closest('button'); if (!b) return;
-        if (b.dataset.all) { var allOn = Object.keys(activeCats).every(function (k) { return activeCats[k]; });
+        var t = e.target.closest('button'); if (!t) return;
+        if (t.dataset.all) { var allOn = Object.keys(activeCats).every(function (k) { return activeCats[k]; });
           Object.keys(activeCats).forEach(function (k) { activeCats[k] = !allOn; });
-          bar.querySelectorAll('[data-cat]').forEach(function (x) { x.classList.toggle('on', !allOn); }); b.classList.toggle('on', !allOn); }
-        else if (b.dataset.cat) { activeCats[b.dataset.cat] = !activeCats[b.dataset.cat]; b.classList.toggle('on'); }
-        else if (b.dataset.who) { who = b.dataset.who; bar.querySelectorAll('[data-who]').forEach(function (x) { x.classList.toggle('on', x === b); }); }
-        else if (b.dataset.near) { locate(b); return; }
+          bar.querySelectorAll('[data-cat]').forEach(function (x) { x.classList.toggle('on', !allOn); }); t.classList.toggle('on', !allOn); }
+        else if (t.dataset.cat) { activeCats[t.dataset.cat] = !activeCats[t.dataset.cat]; t.classList.toggle('on'); }
+        else if (t.dataset.who) { who = t.dataset.who; bar.querySelectorAll('[data-who]').forEach(function (x) { x.classList.toggle('on', x === t); }); }
         refresh();
       });
     }
-    var list = document.getElementById(id + '-near');
-    function listNear() {
-      if (!list) return;
-      var rows = pts.filter(visible).map(function (p) { return { p: p, d: km(me[0], me[1], p.lat, p.lon) }; })
-        .sort(function (a, b) { return a.d - b.d; }).slice(0, opt.nearMax || 12);
-      list.innerHTML = '<h3>Closest to you right now</h3><ol class="nearlist">' + rows.map(function (r) {
-        var c = CAT[r.p.cat] || {};
-        return '<li><b>' + c.e + ' ' + r.p.n + '. ' + r.p.name + '</b> <span class="meta">' + walk(r.d) + (r.p.price ? ' · ' + r.p.price : '') +
-          (r.p.closed ? ' · <span class="warn">' + r.p.closed + '</span>' : '') + '</span><br><a href="' + r.p.page + '">Details</a> · <a target="_blank" rel="noopener" href="' + r.p.link + '">Google Maps ↗</a> · <a target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=' + r.p.lat + ',' + r.p.lon + '">Walk there ↗</a></li>';
-      }).join('') + '</ol><p class="meta">Uses the filters above. Your location stays in your browser and is never sent anywhere.</p>';
-      var b2 = [me].concat(rows.slice(0, 6).map(function (r) { return [r.p.lat, r.p.lon]; }));
-      m.fitBounds(b2, { padding: [30, 30], maxZoom: 17 });
-    }
-    function locate(btn) {
-      if (!navigator.geolocation) { if (list) list.innerHTML = '<p class="warn">This browser cannot share its location.</p>'; return; }
-      btn.textContent = '📍 Locating…';
-      navigator.geolocation.watchPosition(function (pos) {
-        var first = !me; me = [pos.coords.latitude, pos.coords.longitude];
-        if (!meMk) meMk = L.circleMarker(me, { radius: 8, color: '#fff', weight: 3, fillColor: '#1a73e8', fillOpacity: 1 }).addTo(m).bindPopup('You are here');
-        else meMk.setLatLng(me);
-        btn.textContent = '📍 Near me ✓'; btn.classList.add('on');
-        if (first) listNear();
-      }, function (err) {
-        btn.textContent = '📍 Near me';
-        if (list) list.innerHTML = '<p class="warn">Location not available (' + err.message + '). Allow location access for this site, or open it on your phone.</p>';
-      }, { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 });
-    }
-    if (opt.autoNear && bar) { var nb = bar.querySelector('[data-near]'); if (nb) setTimeout(function () { locate(nb); }, 300); }
-    return m;
+    return map;
   };
 })();
