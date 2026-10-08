@@ -3,6 +3,7 @@
    Cards and photo carousels: native CSS scroll-snap (no carousel library). Data: data.json. */
 (function () {
   'use strict';
+  var EMBED = /[?&]embed=1/.test(location.search);   // small version inside the start page: no location prompt, two-finger map
   var CENTRE = [23.7275, 37.9765];          // Monastiraki / historic centre, used when there is no GPS fix
   var WALK = 80 / 1.3;                       // metres of straight line covered per minute on foot (80 m/min, x1.3 for street detours)
   var $ = function (s, el) { return (el || document).querySelector(s); };
@@ -30,8 +31,9 @@
   // ------------------------------------------------------------------ map
   var map = new maplibregl.Map({
     container: 'map', style: 'https://tiles.openfreemap.org/styles/positron', center: CENTRE, zoom: 14.2,
-    attributionControl: { compact: true }, pitchWithRotate: false, dragRotate: false, touchPitch: false
+    attributionControl: { compact: true }, pitchWithRotate: false, dragRotate: false, touchPitch: false, cooperativeGestures: EMBED
   });
+  if (EMBED) { var tl = $('.top a'); tl.href = 'near.html'; tl.target = '_top'; tl.setAttribute('aria-label', 'Open full screen'); tl.innerHTML = '⛶ Full screen <span class="n"><span id="count"></span></span>'; }
   map.touchZoomRotate.disableRotation();
 
   function pinEl(p) {
@@ -305,6 +307,7 @@
     renderFilters();
     rebuild(null);
     // ask for location straight away; the page keeps working (centre + toast) if it is refused
+    if (EMBED) return;   // embedded: distances from the centre until ⌖ is pressed
     if ('geolocation' in navigator) {
       $('#loc').classList.add('busy');
       navigator.geolocation.getCurrentPosition(function (pos) { gotFix(pos, true); startWatch(); }, geoErr,
