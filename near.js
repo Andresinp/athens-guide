@@ -301,7 +301,7 @@
   });
 
   // ------------------------------------------------------------------ boot
-  fetch('data.json').then(function (r) { return r.json(); }).then(function (d) {
+  fetch('data.json?v=946de052').then(function (r) { return r.json(); }).then(function (d) {
     state.cats = d.cats; state.all = d.places;
     state.all.forEach(function (p) { state.markers[p.n] = new maplibregl.Marker({ element: pinEl(p), anchor: 'center' }).setLngLat([p.lon, p.lat]).addTo(map); });
     renderFilters();
