@@ -9,9 +9,13 @@ body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,
 a{color:var(--acc)}h1,h2,h3{line-height:1.2;font-family:Georgia,"Times New Roman",serif;font-weight:600}
 .wrap{max-width:980px;margin:0 auto;padding:0 16px}
 .top{position:sticky;top:0;z-index:1000;background:var(--bg);border-bottom:1px solid var(--line)}
-.top .wrap{display:flex;gap:6px;align-items:center;overflow-x:auto;padding-top:8px;padding-bottom:8px;white-space:nowrap}
+.top .wrap{display:flex;gap:6px;align-items:center;overflow-x:auto;padding-top:8px;padding-bottom:8px;white-space:nowrap;scrollbar-width:none}.top .wrap::-webkit-scrollbar{display:none}
+.nv{display:none;position:absolute;top:0;bottom:2px;width:36px;border:0;padding:0;z-index:2;font-size:22px;line-height:1;color:var(--mut);cursor:pointer}
+.nv.l{left:0;background:linear-gradient(to right,var(--bg) 55%,transparent);text-align:left;padding-left:6px}.nv.r{right:0;background:linear-gradient(to left,var(--bg) 55%,transparent);text-align:right;padding-right:6px}
+.top.can-l .nv.l,.top.can-r .nv.r{display:block}
+.nbar{display:none;position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--line)}.top.can .nbar{display:block}.nbar b{position:absolute;top:0;height:2px;background:var(--acc);border-radius:2px}
 .top a{text-decoration:none;color:var(--fg);padding:6px 10px;border-radius:999px;font-size:14px}
-.top a.on,.top a:hover{background:var(--chip)}.brand{font-weight:700;margin-right:6px}
+.top a.on,.top a:hover{background:var(--chip)}
 .crumbs{font-size:13px;color:var(--mut);margin:14px 0 0}.crumbs a{color:var(--mut)}
 .lead{color:var(--mut);font-size:17px;max-width:70ch}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
@@ -67,7 +71,12 @@ footer{color:var(--mut);font-size:13px;border-top:1px solid var(--line);padding:
 @media (prefers-color-scheme: dark){:root:not([data-theme=light]) .status{background:#3a1e1c;color:#ffb4a8}}
 @media (max-width:600px){h1{font-size:28px}.map{height:360px}.flbl{width:auto}}
 </style></head>
-<body><nav class="top"><div class="wrap"><a class="brand" href="index.html">Athens · friends' picks</a><a href="index.html" class="">🏠 Start</a><a href="near.html" class="">📍 Near me</a><a href="psyri-monastiraki.html" class="">🗺️ Areas</a><a href="c-neighbourhoods.html" class="">🏷️ Types</a><a href="by-erhan.html" class="">👥 Friends</a><a href="events.html" class="">📅 What's on</a><a href="follow.html" class="">📲 Follow</a><a href="about.html" class="on">ℹ️ About</a></div></nav><main class="wrap"><div class="crumbs"><a href="index.html">Start</a> › About</div><h1>How this was made</h1>
+<body><nav class="top"><button class="nv l" type="button" aria-label="Scroll menu left">‹</button><div class="wrap"><a href="index.html" class="">🏠 Start</a><a href="near.html" class="">📍 Near me</a><a href="psyri-monastiraki.html" class="">🗺️ Areas</a><a href="c-neighbourhoods.html" class="">🏷️ Types</a><a href="by-erhan.html" class="">👥 Friends</a><a href="events.html" class="">📅 What's on</a><a href="follow.html" class="">📲 Follow</a><a href="about.html" class="on">ℹ️ About</a></div><button class="nv r" type="button" aria-label="Scroll menu right">›</button><i class="nbar" aria-hidden="true"><b></b></i></nav><script>(function(){var n=document.currentScript.previousElementSibling,w=n.querySelector('.wrap'),b=n.querySelector('.nbar b');
+function u(){var m=w.scrollWidth-w.clientWidth;n.classList.toggle('can',m>2);n.classList.toggle('can-l',w.scrollLeft>2);n.classList.toggle('can-r',w.scrollLeft<m-2);
+if(m>2){b.style.width=(w.clientWidth/w.scrollWidth*100)+'%';b.style.left=(w.scrollLeft/w.scrollWidth*100)+'%';}}
+n.querySelector('.l').onclick=function(){w.scrollBy({left:-w.clientWidth*.7,behavior:'smooth'})};n.querySelector('.r').onclick=function(){w.scrollBy({left:w.clientWidth*.7,behavior:'smooth'})};
+var on=w.querySelector('a.on');if(on)w.scrollLeft=on.offsetLeft-(w.clientWidth-on.offsetWidth)/2;
+w.addEventListener('scroll',u,{passive:true});addEventListener('resize',u);u();})();</script><main class="wrap"><div class="crumbs"><a href="index.html">Start</a> › About</div><h1>How this was made</h1>
 <p>The recommendations came from three friends: Erhan's Google Maps pins, Irene's list of restaurants, bars, clubs and neighbourhoods, and Giulia's museums, walks and links.</p>
 <ul><li>Erhan's 31 short links were resolved to their Google places. On this site they link to the <b>original pins</b>.</li>
 <li>Places that came as plain names were identified on the web. They link to a Google Maps search for their exact name and address.</li>
