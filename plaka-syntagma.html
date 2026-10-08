@@ -21,6 +21,9 @@ a{color:var(--acc)}h1,h2,h3{line-height:1.2;font-family:Georgia,"Times New Roman
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .tile{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;text-decoration:none;color:var(--fg)}
 .tile:hover{border-color:var(--acc)}.tile b{display:block;font-size:17px}.tile span{color:var(--mut);font-size:14px}
+/* start page: compact tiles. Areas one column, types and "start here" two columns on phones */
+.grid.zg{gap:7px}.zg .tile{padding:9px 13px;border-radius:12px}.zg .tile b{font-size:16px;line-height:1.25}.zg .tile span{font-size:13px;line-height:1.35;display:block;margin-top:1px}
+.grid.grid2{grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:7px}.grid2 .tile{padding:7px 10px;border-radius:11px}.grid2 .tile b{font-size:14px;line-height:1.25}.grid2 .tile span{font-size:12px;line-height:1.3;display:block;margin-top:2px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0;break-inside:avoid;scroll-margin-top:70px}
 .card h3{margin:0 0 4px;font-size:19px}.n{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:13px;background:var(--acc);color:#fff;font:600 13px/1 sans-serif;margin-right:6px;padding:0 6px}
 .meta{font-size:13.5px;color:var(--mut);margin:2px 0 6px}.card p{margin:6px 0}
