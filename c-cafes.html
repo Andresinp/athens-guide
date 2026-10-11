@@ -31,8 +31,9 @@ a{color:var(--acc)}h1,h2,h3{line-height:1.2;font-family:Georgia,"Times New Roman
 .chip{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--chip);color:var(--fg);white-space:nowrap}
 .v-alternative{color:var(--alt)}.v-posh{color:var(--posh)}.v-must-see{color:var(--must)}.v-trendy{color:var(--trendy)}.v-classic{color:var(--classic)}
 .btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
-.btn{font-size:14px;text-decoration:none;padding:6px 12px;border-radius:9px;border:1px solid var(--line);color:var(--acc);background:var(--bg)}
+.btn{display:inline-block;line-height:1.35;font-size:14px;text-decoration:none;padding:6px 12px;border-radius:9px;border:1px solid var(--line);color:var(--acc);background:var(--bg)}
 .btn.pri{background:var(--acc);color:#fff;border-color:var(--acc)}
+.follow-h{margin-top:28px}
 .map{height:420px;border-radius:14px;border:1px solid var(--line);margin:12px 0}
 .pager{display:flex;justify-content:space-between;gap:10px;margin:28px 0 40px;flex-wrap:wrap}
 .pager a{flex:1 1 220px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-decoration:none;color:var(--fg);background:var(--card)}
@@ -80,6 +81,7 @@ text-decoration:none;font:600 13.5px/1 -apple-system,BlinkMacSystemFont,"Segoe U
 .status{background:#fdecea;color:#8a1c12;border-radius:8px;padding:5px 10px;font-size:13.5px;margin:6px 0}
 .card.off{opacity:.85}.pop span{color:#555;font-size:12px}
 @media (prefers-color-scheme: dark){:root:not([data-theme=light]) .status{background:#3a1e1c;color:#ffb4a8}}
+@media (prefers-color-scheme: dark){:root:not([data-theme=light]) .btn.pri,:root:not([data-theme=light]) a.tix{color:#10141a}}   /* dark text on the light-blue accent */
 @media (max-width:600px){h1{font-size:28px}.map{height:360px}.flbl{width:auto}}
 </style></head>
 <body><nav class="top"><button class="nv l" type="button" aria-label="Scroll menu left">‹</button><div class="wrap"><a href="index.html" class="">🏠 Start</a><a href="near.html" class="">📍 Near me</a><a href="psyri-monastiraki.html" class="">🗺️ Areas</a><a href="c-neighbourhoods.html" class="on">🏷️ Types</a><a href="by-erhan.html" class="">👥 Friends</a><a href="events.html" class="">📅 What's on</a><a href="follow.html" class="">📲 Follow</a><a href="about.html" class="">ℹ️ About</a></div><button class="nv r" type="button" aria-label="Scroll menu right">›</button><i class="nbar" aria-hidden="true"><b></b></i></nav><script>(function(){var n=document.currentScript.previousElementSibling,w=n.querySelector('.wrap'),b=n.querySelector('.nbar b');
