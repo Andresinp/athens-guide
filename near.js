@@ -225,7 +225,7 @@
   });
 
   // ------------------------------------------------------------------ boot
-  fetch('data.json?v=c2ac25bd').then(function (r) { return r.json(); }).then(function (d) {
+  fetch('data.json?v=563ef742').then(function (r) { return r.json(); }).then(function (d) {
     state.cats = GC.cats = d.cats; state.all = d.places; d.places.forEach(function (p) { GC.byN[p.n] = p; }); state.who_list = d.who || ['Erhan', 'Irene', 'Giulia'];
     state.all.forEach(function (p) { state.markers[p.n] = new maplibregl.Marker({ element: pinEl(p), anchor: 'center' }).setLngLat([p.lon, p.lat]).addTo(map); });
     urlFilters();
