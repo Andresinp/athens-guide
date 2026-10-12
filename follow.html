@@ -47,7 +47,8 @@ table.ev tr.gone{display:none!important}
 .fswitch .names{display:flex;gap:6px;flex:1;justify-content:center;flex-wrap:wrap}
 .fswitch .names a{padding:6px 14px;border-radius:999px;border:1px solid var(--line);text-decoration:none;color:var(--fg);font-size:14.5px;font-weight:600}
 .fswitch .names a.on{background:var(--acc);border-color:var(--acc);color:#fff}
-.fswitch .arr{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:50%;border:1px solid var(--line);text-decoration:none;color:var(--acc);font-size:22px;line-height:1;background:var(--card)}
+h1.zh{display:flex;align-items:center;gap:10px}h1.zh span{flex:1;min-width:0;text-align:center}
+h1.zh .arr,.fswitch .arr{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:50%;border:1px solid var(--line);text-decoration:none;color:var(--acc);font-size:22px;line-height:1;background:var(--card)}
 @media (prefers-color-scheme: dark){:root:not([data-theme=light]) .fswitch .names a.on{color:#10141a}}
 .evl{margin-top:5px;font-size:14px}.evl a{font-weight:600}.evl a.tix,li a.tix{color:#fff;background:var(--acc);padding:2px 9px;border-radius:999px;text-decoration:none;white-space:nowrap}
 .when{float:right;margin:0 0 4px 10px;font:600 11.5px/1 inherit;font-family:inherit;padding:5px 9px;border-radius:999px;white-space:nowrap}.when:empty{display:none}.w-now{background:#e3f5e8;color:#1e7a3c}.w-last{background:#fff1dc;color:#a35a00}.w-soon{background:#e4eefc;color:#1a5fbf}.w-later{background:#f1eee7;color:#6f6b63}.w-ended{background:#eee;color:#888}tr.past{opacity:.55}
@@ -91,7 +92,7 @@ text-decoration:none;font:600 13.5px/1 -apple-system,BlinkMacSystemFont,"Segoe U
 @media (prefers-color-scheme: dark){:root:not([data-theme=light]) .btn.pri,:root:not([data-theme=light]) a.tix{color:#10141a}}   /* dark text on the light-blue accent */
 @media (max-width:600px){h1{font-size:28px}.map{height:360px}.flbl{width:auto}}
 </style></head>
-<body><nav class="top"><button class="nv l" type="button" aria-label="Scroll menu left">‹</button><div class="wrap"><a href="index.html" class="">🏠 Start</a><a href="near.html" class="">📍 Near me</a><a href="psyri-monastiraki.html" class="">🗺️ Areas</a><a href="by-erhan.html" class="">👥 Friends</a><a href="events.html" class="">📅 What's on</a><a href="follow.html" class="on">📲 Follow</a><a href="about.html" class="">ℹ️ About</a></div><button class="nv r" type="button" aria-label="Scroll menu right">›</button><i class="nbar" aria-hidden="true"><b></b></i></nav><script>(function(){var n=document.currentScript.previousElementSibling,w=n.querySelector('.wrap'),b=n.querySelector('.nbar b');
+<body><nav class="top"><button class="nv l" type="button" aria-label="Scroll menu left">‹</button><div class="wrap"><a href="index.html" class="">🏠 Start</a><a href="near.html" class="">📍 Near me</a><a href="by-erhan.html" class="">👥 Friends</a><a href="events.html" class="">📅 What's on</a><a href="follow.html" class="on">📲 Follow</a><a href="about.html" class="">ℹ️ About</a></div><button class="nv r" type="button" aria-label="Scroll menu right">›</button><i class="nbar" aria-hidden="true"><b></b></i></nav><script>(function(){var n=document.currentScript.previousElementSibling,w=n.querySelector('.wrap'),b=n.querySelector('.nbar b');
 function u(){var m=w.scrollWidth-w.clientWidth;n.classList.toggle('can',m>2);n.classList.toggle('can-l',w.scrollLeft>2);n.classList.toggle('can-r',w.scrollLeft<m-2);
 if(m>2){b.style.width=(w.clientWidth/w.scrollWidth*100)+'%';b.style.left=(w.scrollLeft/w.scrollWidth*100)+'%';}}
 n.querySelector('.l').onclick=function(){w.scrollBy({left:-w.clientWidth*.7,behavior:'smooth'})};n.querySelector('.r').onclick=function(){w.scrollBy({left:w.clientWidth*.7,behavior:'smooth'})};
