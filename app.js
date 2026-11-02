@@ -92,7 +92,7 @@
       m._p = p; markers.push(m);
     });
 
-    // ---- filters (type + friend); "Near me" opens the full-screen page
+    // ---- filters (type + friend); "Map" (near.html) opens the full-screen page
     var bar = opt.filters && document.getElementById(id + '-f');
     var activeCats = {}, who = 'all';
     Object.keys(CAT).forEach(function (k) { activeCats[k] = true; });
